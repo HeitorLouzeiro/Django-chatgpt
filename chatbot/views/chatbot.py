@@ -1,11 +1,7 @@
-import json
 import os
 from time import sleep
 
 import tiktoken
-from django.http import JsonResponse
-from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
 from openai import OpenAI
 
 # Set OpenAI API key
@@ -105,38 +101,6 @@ def bot(prompt, historico):
             sleep(1)
 
 
-def index(request):
-    template_name = 'pages/index.html'
-    return render(request, template_name)
-
-
-@csrf_exempt
-def chat(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body.decode('utf-8'))
-            prompt = data['msg']
-
-            nome_do_arquivo = 'historico.txt'
-
-            historico = ''
-            if os.path.exists(nome_do_arquivo):
-                historico = carrega(nome_do_arquivo)
-
-            # Process the prompt (replace this with your actual processing logic)
-            response = list(trata_resposta(prompt, historico, nome_do_arquivo))
-
-            # Return the result as a JsonResponse
-            return JsonResponse({'response': response})
-
-        except json.JSONDecodeError as e:
-            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-
-    # If the request is not a POST request, render a template
-    template_name = 'pages/chat.html'
-    return render(request, template_name)
-
-
 def trata_resposta(prompt, historico, nome_do_arquivo):
     resposta_parcial = ''
     historico_parcial = limita_historico(historico, limite_maximo_de_tokens)
@@ -151,11 +115,3 @@ def trata_resposta(prompt, historico, nome_do_arquivo):
     Chatbot: {resposta_parcial}
     """
     salva(nome_do_arquivo, conteudo)
-
-
-@csrf_exempt
-def limpar_historico(request):
-    nome_do_arquivo = 'historico.txt'
-    if os.path.exists(nome_do_arquivo):
-        os.remove(nome_do_arquivo)
-    return JsonResponse({'response': 'Histórico apagado!'})
