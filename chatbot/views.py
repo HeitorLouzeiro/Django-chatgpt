@@ -32,12 +32,11 @@ def salva(nome_do_arquivo, conteudo):
 
 
 dados_ecommerce = carrega('dados_ecommerce.txt')
-print(dados_ecommerce)
 
 MAX_RETRIES = 1
 
 
-def bot(prompt):
+def bot(prompt, historico):
     max_retries = MAX_RETRIES
     retries = 0
 
@@ -49,8 +48,9 @@ def bot(prompt):
             Você não deve responder perguntas que não sejam dados do ecommerce informado!
             ## Dados do ecommerce:
             """ + dados_ecommerce + """
+            ## Histórico de conversa:
+            """ + historico + """
             """
-            print(system_prompt)
 
             query = client.chat.completions.create(
                 messages=[
@@ -87,8 +87,14 @@ def chat(request):
             data = json.loads(request.body.decode('utf-8'))
             prompt = data['msg']
 
+            nome_do_arquivo = 'historico.txt'
+
+            historico = ''
+            if os.path.exists(nome_do_arquivo):
+                historico = carrega(nome_do_arquivo)
+
             # Process the prompt (replace this with your actual processing logic)
-            response = list(trata_resposta(prompt))
+            response = list(trata_resposta(prompt, historico, nome_do_arquivo))
 
             # Return the result as a JsonResponse
             return JsonResponse({'response': response})
@@ -101,10 +107,15 @@ def chat(request):
     return render(request, template_name)
 
 
-def trata_resposta(prompt):
+def trata_resposta(prompt, historico, nome_do_arquivo):
     resposta_parcial = ''
-    for resposta in bot(prompt):
+    for resposta in bot(prompt, historico):
         pedaco_da_resposta = resposta.choices[0].delta.content
         if pedaco_da_resposta is not None and len(pedaco_da_resposta):
             resposta_parcial += pedaco_da_resposta
             yield pedaco_da_resposta
+    conteudo = f""" 
+    Usuário: {prompt}
+    Chatbot: {resposta_parcial}
+    """
+    salva(nome_do_arquivo, conteudo)
