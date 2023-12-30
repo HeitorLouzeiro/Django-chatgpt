@@ -151,3 +151,11 @@ def trata_resposta(prompt, historico, nome_do_arquivo):
     Chatbot: {resposta_parcial}
     """
     salva(nome_do_arquivo, conteudo)
+
+
+@csrf_exempt
+def limpar_historico(request):
+    nome_do_arquivo = 'historico.txt'
+    if os.path.exists(nome_do_arquivo):
+        os.remove(nome_do_arquivo)
+    return JsonResponse({'response': 'Histórico apagado!'})
