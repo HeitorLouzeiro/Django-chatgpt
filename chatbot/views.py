@@ -14,12 +14,16 @@ client = OpenAI(api_key=api_key)
 
 # Create your views here.
 
+# Conta o número de tokens de uma string
+
 
 def conta_tokens(prompt):
     codificador = tiktoken.encoding_for_model("gpt-3.5-turbo")
     lista_de_tokens = codificador.encode(prompt)
     contagem = len(lista_de_tokens)
     return contagem
+
+# Carrega um arquivo de texto e retorna seu conteúdo
 
 
 def carrega(nome_do_arquivo):
@@ -30,24 +34,39 @@ def carrega(nome_do_arquivo):
     except IOError as e:
         print(f"Erro no carregamento de arquivo: {e}")
 
+# Salva um arquivo de texto com o conteúdo informado
+
 
 def salva(nome_do_arquivo, conteudo):
     try:
-        with open(nome_do_arquivo, "a", encoding="utf-8") as arquivo:
+        # w = write (escrita)
+        with open(nome_do_arquivo, "w", encoding="utf-8") as arquivo:
             arquivo.write(conteudo)
     except IOError as e:
         print(f"Erro ao salvar arquivo: {e}")
 
 
 dados_ecommerce = carrega('dados_ecommerce.txt')
-print(conta_tokens(dados_ecommerce))
+
+# Limite de tokens para o histórico
+limite_maximo_de_tokens = 2000
 
 
-MAX_RETRIES = 1
+def limita_historico(historico, limite_maximo_de_tokens):
+    total_de_tokens = 0
+    historico_parcial = ''
+    # Reversed para pegar do mais recente para o mais antigo
+    for linha in reversed(historico.split('\n')):
+        tokens_da_linha = conta_tokens(linha)
+        total_de_tokens = total_de_tokens + tokens_da_linha
+        if (total_de_tokens > limite_maximo_de_tokens):
+            break
+        historico_parcial = linha + historico_parcial
+    return historico_parcial
 
 
 def bot(prompt, historico):
-    max_retries = MAX_RETRIES
+    max_retries = 1
     retries = 0
 
     while True:
@@ -62,11 +81,6 @@ def bot(prompt, historico):
             ## Histórico de conversa:
             """ + historico + """
             """
-            tamanho_esperado_saida = 2000
-            total_de_tokens_modelo = 4000
-
-            if conta_tokens(system_prompt) >= total_de_tokens_modelo - tamanho_esperado_saida:  # noqa
-                model = 'gpt-3.5-turbo-16k'
 
             query = client.chat.completions.create(
                 messages=[
@@ -125,12 +139,14 @@ def chat(request):
 
 def trata_resposta(prompt, historico, nome_do_arquivo):
     resposta_parcial = ''
-    for resposta in bot(prompt, historico):
+    historico_parcial = limita_historico(historico, limite_maximo_de_tokens)
+    for resposta in bot(prompt, historico_parcial):
         pedaco_da_resposta = resposta.choices[0].delta.content
         if pedaco_da_resposta is not None and len(pedaco_da_resposta):
             resposta_parcial += pedaco_da_resposta
             yield pedaco_da_resposta
     conteudo = f""" 
+    Histórico: {historico_parcial}
     Usuário: {prompt}
     Chatbot: {resposta_parcial}
     """
