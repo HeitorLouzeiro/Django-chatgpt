@@ -2,6 +2,7 @@ import json
 import os
 from time import sleep
 
+import tiktoken
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -12,6 +13,13 @@ api_key = os.environ.get('OPENAI_API_KEY')
 client = OpenAI(api_key=api_key)
 
 # Create your views here.
+
+
+def conta_tokens(prompt):
+    codificador = tiktoken.encoding_for_model("gpt-3.5-turbo")
+    lista_de_tokens = codificador.encode(prompt)
+    contagem = len(lista_de_tokens)
+    return contagem
 
 
 def carrega(nome_do_arquivo):
@@ -32,6 +40,8 @@ def salva(nome_do_arquivo, conteudo):
 
 
 dados_ecommerce = carrega('dados_ecommerce.txt')
+print(conta_tokens(dados_ecommerce))
+
 
 MAX_RETRIES = 1
 
@@ -42,6 +52,7 @@ def bot(prompt, historico):
 
     while True:
         try:
+            # 4000 tokens
             model = 'gpt-3.5-turbo'
             system_prompt = """
             Você é um chatbot de atendimento a clientes de um e-commerce.
@@ -51,6 +62,11 @@ def bot(prompt, historico):
             ## Histórico de conversa:
             """ + historico + """
             """
+            tamanho_esperado_saida = 2000
+            total_de_tokens_modelo = 4000
+
+            if conta_tokens(system_prompt) >= total_de_tokens_modelo - tamanho_esperado_saida:  # noqa
+                model = 'gpt-3.5-turbo-16k'
 
             query = client.chat.completions.create(
                 messages=[
