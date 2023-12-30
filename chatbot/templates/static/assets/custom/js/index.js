@@ -33,19 +33,22 @@ async function enviarMensagem() {
 
 
 async function exibirComEfeitoDeDigitacao(elemento, texto) {
-    const delay = 20; // Ajuste o atraso conforme necessário
-    const textoComQuebrasDeLinha = texto.replace(/\n/g, '<br>');
+    const delay = 150; // Adjust the delay as needed
+    const textoComQuebrasDeLinha = texto.split('\n');
+ 
     for (let i = 0; i < textoComQuebrasDeLinha.length; i++) {
         await esperar(delay);
         elemento.innerHTML += textoComQuebrasDeLinha[i];
+        
+        // If this is not the last line, append a <br> tag
+        if (i !== textoComQuebrasDeLinha.length - 1) {
+            let br = document.createElement('br');
+            elemento.appendChild(br);
+        }
+ 
         vaiParaFinalDoChat();
     }
-
-    // Use uma div para garantir que as quebras de linha sejam exibidas corretamente
-    const div = document.createElement('div');
-    div.innerHTML = textoComQuebrasDeLinha;
-    elemento.innerHTML = div.innerHTML;
-}
+ }
 
 function esperar(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
