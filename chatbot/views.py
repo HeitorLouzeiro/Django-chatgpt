@@ -34,6 +34,7 @@ def bot(prompt):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
                 ],
+                stream=True,
                 temperature=1,
                 max_tokens=256,
                 top_p=1,
@@ -41,8 +42,7 @@ def bot(prompt):
                 presence_penalty=0,
                 model=model
             )
-            response = query.choices[0].message.content
-            return response
+            return query
 
         except Exception as error:
             retries += 1
@@ -63,13 +63,26 @@ def chat(request):
         try:
             data = json.loads(request.body.decode('utf-8'))
             prompt = data['msg']
-            response = bot(prompt=prompt)
 
-            # Return a JSON response
+            # Process the prompt (replace this with your actual processing logic)
+            response = list(trata_resposta(prompt))
+            print(response)
+
+            # Return the result as a JsonResponse
             return JsonResponse({'response': response})
 
         except json.JSONDecodeError as e:
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
+    # If the request is not a POST request, render a template
     template_name = 'pages/chat.html'
     return render(request, template_name)
+
+
+def trata_resposta(prompt):
+    resposta_parcial = ''
+    for resposta in bot(prompt):
+        pedaco_da_resposta = resposta.choices[0].delta.content
+        if pedaco_da_resposta is not None and len(pedaco_da_resposta):
+            resposta_parcial += pedaco_da_resposta
+            yield pedaco_da_resposta
