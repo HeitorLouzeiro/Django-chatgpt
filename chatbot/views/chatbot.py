@@ -4,15 +4,14 @@ from time import sleep
 import tiktoken
 from openai import OpenAI
 
+from .resumidor import criando_resumo
+
 # Set OpenAI API key
 api_key = os.environ.get('OPENAI_API_KEY')
 client = OpenAI(api_key=api_key)
 
-# Create your views here.
 
 # Conta o número de tokens de uma string
-
-
 def conta_tokens(prompt):
     codificador = tiktoken.encoding_for_model("gpt-3.5-turbo")
     lista_de_tokens = codificador.encode(prompt)
@@ -43,22 +42,6 @@ def salva(nome_do_arquivo, conteudo):
 
 
 dados_ecommerce = carrega('dados_ecommerce.txt')
-
-# Limite de tokens para o histórico
-limite_maximo_de_tokens = 2000
-
-
-def limita_historico(historico, limite_maximo_de_tokens):
-    total_de_tokens = 0
-    historico_parcial = ''
-    # Reversed para pegar do mais recente para o mais antigo
-    for linha in reversed(historico.split('\n')):
-        tokens_da_linha = conta_tokens(linha)
-        total_de_tokens = total_de_tokens + tokens_da_linha
-        if (total_de_tokens > limite_maximo_de_tokens):
-            break
-        historico_parcial = linha + historico_parcial
-    return historico_parcial
 
 
 def bot(prompt, historico):
@@ -103,14 +86,14 @@ def bot(prompt, historico):
 
 def trata_resposta(prompt, historico, nome_do_arquivo):
     resposta_parcial = ''
-    historico_parcial = limita_historico(historico, limite_maximo_de_tokens)
-    for resposta in bot(prompt, historico_parcial):
+    historico_resumido = criando_resumo(historico)
+    for resposta in bot(prompt, historico_resumido):
         pedaco_da_resposta = resposta.choices[0].delta.content
         if pedaco_da_resposta is not None and len(pedaco_da_resposta):
             resposta_parcial += pedaco_da_resposta
             yield pedaco_da_resposta
     conteudo = f""" 
-    Histórico: {historico_parcial}
+    Histórico: {historico_resumido}
     Usuário: {prompt}
     Chatbot: {resposta_parcial}
     """
