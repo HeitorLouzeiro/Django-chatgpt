@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
+from django.contrib.messages import constants
 import os
 from pathlib import Path
 
@@ -39,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'chatbot',
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -56,7 +58,8 @@ ROOT_URLCONF = 'settings.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'chatbot/templates'],
+        'DIRS': [BASE_DIR / 'chatbot/templates' or
+                 BASE_DIR / 'accounts/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -126,3 +129,13 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# message
+MESSAGE_TAGS = {
+    constants.ERROR: 'error',
+    constants.WARNING: 'warning',
+    constants.DEBUG: 'info',
+    constants.SUCCESS: 'success',
+    constants.INFO: 'info',
+}

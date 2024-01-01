@@ -2,6 +2,7 @@
 import json
 import os
 
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -9,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .chatbot import carrega, trata_resposta
 
 
+@login_required(login_url='accounts:login', redirect_field_name='next')
 def index(request):
     template_name = 'pages/index.html'
     return render(request, template_name)
@@ -37,7 +39,7 @@ def chat(request):
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
     # If the request is not a POST request, render a template
-    template_name = 'pages/chat.html'
+    template_name = 'pages/index.html'
     return render(request, template_name)
 
 

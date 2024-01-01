@@ -12,6 +12,7 @@
         <img src="{% static 'images/logo-chatbot.svg' %}" alt="Logo Chatbot">
         <div class="cabecalho__acoes">
             <a href="#" onclick="limparConversa()">Limpar Conversa</a>
+            <a href="{% url "accounts:logout" %}">Logout</a> 
         </div>
    </header> 
    <main class="main">
