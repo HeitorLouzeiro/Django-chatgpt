@@ -1,6 +1,7 @@
 
 import json
 import os
+from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -23,7 +24,8 @@ def chat(request):
             data = json.loads(request.body.decode('utf-8'))
             prompt = data['msg']
 
-            nome_do_arquivo = 'historico.txt'
+            nome_do_arquivo = request.user.username + '.txt'
+            print(nome_do_arquivo)
 
             historico = ''
             if os.path.exists(nome_do_arquivo):
@@ -45,7 +47,7 @@ def chat(request):
 
 @csrf_exempt
 def limpar_historico(request):
-    nome_do_arquivo = 'historico.txt'
+    nome_do_arquivo = request.user.username + '.txt'
     if os.path.exists(nome_do_arquivo):
         os.remove(nome_do_arquivo)
     return JsonResponse({'response': 'Histórico apagado!'})
