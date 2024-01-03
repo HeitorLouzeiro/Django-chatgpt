@@ -2,7 +2,7 @@ import os
 from time import sleep
 
 import tiktoken
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 
 from .resumidor import criando_resumo
 
@@ -50,11 +50,12 @@ def bot(prompt, historico):
 
     while True:
         try:
-            # 4000 tokens
+            # 4000 tokens é o limite de tokens por chamada
             model = 'gpt-3.5-turbo'
             system_prompt = """
             Você é um chatbot de atendimento a clientes de um e-commerce.
-            Você não deve responder perguntas que não sejam dados do ecommerce informado!
+            Você não deve responder perguntas que não
+            sejam dados do ecommerce informado!
             ## Dados do ecommerce:
             """ + dados_ecommerce + """
             ## Histórico de conversa:
@@ -85,16 +86,26 @@ def bot(prompt, historico):
 
 
 def trata_resposta(prompt, historico, nome_do_arquivo):
-    resposta_parcial = ''
-    historico_resumido = criando_resumo(historico)
-    for resposta in bot(prompt, historico_resumido):
-        pedaco_da_resposta = resposta.choices[0].delta.content
-        if pedaco_da_resposta is not None and len(pedaco_da_resposta):
-            resposta_parcial += pedaco_da_resposta
-            yield pedaco_da_resposta
-    conteudo = f""" 
-    Histórico: {historico_resumido}
-    Usuário: {prompt}
-    Chatbot: {resposta_parcial}
-    """
-    salva(nome_do_arquivo, conteudo)
+    try:
+        resposta_parcial = ''
+        historico_resumido = criando_resumo(historico)
+        for resposta in bot(prompt, historico_resumido):
+            if isinstance(resposta, str):
+                resposta_parcial += resposta
+                mensagemErro = f'Internal error: Please submit a response again.'  # noqa
+                yield mensagemErro
+            else:
+                # Tratar a resposta como um objeto com o atributo 'choices'
+                pedaco_da_resposta = resposta.choices[0].delta.content
+                if pedaco_da_resposta is not None and len(pedaco_da_resposta):
+                    resposta_parcial += pedaco_da_resposta
+                    yield pedaco_da_resposta
+
+        conteudo = f"""
+        Histórico: {historico_resumido}
+        Usuário: {prompt}
+        Chatbot: {resposta_parcial}
+        """
+        salva(nome_do_arquivo, conteudo)
+    except RateLimitError:
+        yield "Error. Try again later."
